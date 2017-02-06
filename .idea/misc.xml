@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="IpnbSettings">
+    <option name="URL" value="http://192.168.1.29:8888" />
+  </component>
+  <component name="ProjectRootManager" version="2" project-jdk-name="Python 3.5.2 virtualenv at ~/virtualenv1" project-jdk-type="Python SDK" />
+  <component name="PythonCompatibilityInspectionAdvertiser">
+    <option name="version" value="1" />
+  </component>
+  <component name="SvnBranchConfigurationManager">
+    <option name="mySupportsUserInfoFilter" value="true" />
+  </component>
+</project>
