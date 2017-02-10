@@ -97,21 +97,66 @@ class MNISTtrain :
     def get_loss (self) :
         return self.cost
 
-    def get_batch_size (self) :
-        return int(self.num_epochs * self.train_size) // BATCH_SIZE
+    def train (self) :
 
-    def get_train (self , global_step) :
+        batch = tf.Variable(0, dtype=tf.float32, name='batch')
 
-        learning_rate = tf.train.exponential_decay(0.01, global_step * BATCH_SIZE, self.train_size, 0.95, staircase=True, name='decay_learning_rate')
+        learning_rate = tf.train.exponential_decay(0.01, batch * BATCH_SIZE, self.train_size, 0.95, staircase=True, name='decay_learning_rate')
 
-        self.optimizer = tf.train.MomentumOptimizer(learning_rate, 0.9).minimize(self.cost, global_step=global_step, name='optimizer')
+        self.optimizer = tf.train.MomentumOptimizer(learning_rate, 0.9).minimize(self.cost, global_step=batch, name='optimizer')
 
         self.train_prediction = tf.nn.softmax(self.logits, name='train_prediction')
 
-        return self.optimizer
+
+
+        start_time = time.time()
+
+        with tf.Session() as sess :
+            tf.global_variables_initializer().run()
+
+            saver = tf.train.Saver()
+
+            for step in range(int(self.num_epochs * self.train_size) // BATCH_SIZE) :
+                offset = (step * BATCH_SIZE) % (self.train_size - BATCH_SIZE)
+                batch_data = self.train_data[offset : (offset + BATCH_SIZE)]
+                batch_labels = self.train_labels[offset:(offset + BATCH_SIZE)]
+
+                feed_dict = { self.train_data_node : batch_data, self.train_labels_node : batch_labels }
+
+                sess.run(self.optimizer, feed_dict = feed_dict)
+
+                if step % EVAL_FREQUENCY == 0 :
+                    l, lr, predictions = sess.run([self.cost, self.learning_rate, self.train_prediction], feed_dict=feed_dict)
+                    elapsed_time = time.time() - start_time
+                    start_time = time.time()
+
+                    print('--------------------------------------------------------------------')
+                    print('Step %d (epoch %.2f), %.1f ms' % (
+                    step, float(step) * BATCH_SIZE / self.train_size, 1000 * elapsed_time / EVAL_FREQUENCY))
+                    print('Minibatch loss: %.3f, learning rate: %.6f' % (l, lr))
+
+                    print('Step %d (epoch %.2f), %.1f ms' % (step, float(step) * BATCH_SIZE / self.train_size , 1000 * elapsed_time / EVAL_FREQUENCY ))
+
+            saver.save(sess=sess, save_path=os.path.join(train_checkpoint, 'save.ckpt'))
+
+            sys.stdout.flush()
+
+            print ( "finished!" )
+
+        '''
+            test_error = error_rate(eval_in_batches(test_data, sess), test_labels)
+
+            print('Test error: %.1f%%' % test_error)
+
+            if FLAGS.self_test:
+              print('test_error', test_error)
+              assert test_error == 0.0, 'expected 0.0 test_error, got %.2f' % ( test_error,)
+        '''
 
 if __name__ == '__main__' :
 
     if tf.gfile.Exists(train_checkpoint):
         tf.gfile.DeleteRecursively(train_checkpoint)
     tf.gfile.MakeDirs(train_checkpoint)
+
+    main()
