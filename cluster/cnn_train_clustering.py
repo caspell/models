@@ -12,6 +12,8 @@ import gzip
 
 from six.moves import urllib
 
+
+
 from utils import mnist_common as cmm
 
 from tensorflow.examples.tutorials.mnist import input_data
