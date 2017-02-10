@@ -46,7 +46,7 @@ def main(_):
 
             global_step = tf.Variable(0, dtype=tf.float32, name='batch')
 
-            train_op = mnistTrain.get_train()
+            train_op = mnistTrain.get_train(global_step)
 
             saver = tf.train.Saver()
 
