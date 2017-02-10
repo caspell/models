@@ -29,6 +29,15 @@ class MnistCnn () :
         fc2_weight = tf.Variable(tf.truncated_normal([512, self.NUM_LABELS], stddev=0.1, seed=self.SEED, dtype=tf.float32), name='fc2_weight')
         fc2_bias = tf.Variable(tf.constant(0.1, shape=[self.NUM_LABELS], dtype=tf.float32), name='fc2_bias')
 
+        self.W1 = W1
+        self.B1 = b1
+        self.W2 = W2
+        self.B2 = b2
+        self.FW1 = fc1_weight
+        self.FW2 = fc2_weight
+        self.FB1 = fc1_bias
+        self.FB2 = fc2_bias
+
         with tf.name_scope('model'):
             conv = tf.nn.conv2d(self.eval_data, W1, strides=[1, 1, 1, 1], padding='SAME')
 
@@ -96,49 +105,35 @@ class MnistCnn () :
 
         return "not yet"
 
-    def showGraph(self, imgRst) :
 
-        prst = self.pool2.eval({self.eval_data: [imgRst]})[0]
+    def gridView(self, images) :
 
-        print(np.shape(prst))
-        _, _, channel = np.shape(prst)
+        for i in range(len(images)) :
+            imageData = images[i]
 
-        index = 0
+            r, c, channel = np.shape(imageData)
 
-        fig = plt.figure()
+            rc = int(np.round(np.sqrt(channel)))
 
-        gs = gridspec.GridSpec(8, 8, wspace=0.0)
-        ax = [plt.subplot(gs[i]) for i in (range(64))]
-        gs.update(hspace=0)
-        for j in range(8):
-            for i in range(8):
-                _list = prst[:, :, index:index + 1:]
+            cc = int(channel / rc)
+
+            if channel // rc > 1 : cc += 1
+
+            index = 0
+
+            fig = plt.figure('figure %d' % (i + 1))
+
+            gs = gridspec.GridSpec(rc, cc, wspace=0.0)
+
+            ax = [plt.subplot(gs[i]) for i in (range(channel))]
+
+            gs.update(hspace=0)
+
+            for i in range(channel):
+                _list = imageData[:, :, index:index + 1:]
                 _list = np.squeeze(_list, axis=2)
                 ax[index].imshow(_list)
                 index += 1
-
-        plt.show()
-
-    def gridView(self, imageData) :
-        r, c, channel = np.shape(imageData)
-
-        cell = int(channel / 10 + 1)
-
-        index = 0
-
-        fig = plt.figure()
-
-        gs = gridspec.GridSpec(channel, channel, wspace=0.0)
-
-        ax = [plt.subplot(gs[i]) for i in (range(channel))]
-
-        gs.update(hspace=0)
-
-        for i in range(channel):
-            _list = imageData[:, :, index:index + 1:]
-            _list = np.squeeze(_list, axis=2)
-            ax[index].imshow(_list)
-            index += 1
 
         plt.show()
 
@@ -173,11 +168,27 @@ class MnistCnn () :
 
         conv1W = self.conv1.eval({self.eval_data: [imgRst]})[0]
 
-        conv1W = self.conv1.eval({self.eval_data: [imgRst]})[0]
+        conv2W = self.conv2.eval({self.eval_data: [imgRst]})[0]
 
-        self.gridView(conv1W)
+        relu1W = self.relu1.eval({self.eval_data: [imgRst]})[0]
 
+        relu2W = self.relu2.eval({self.eval_data: [imgRst]})[0]
 
+        pool1W = self.pool1.eval({self.eval_data: [imgRst]})[0]
+
+        pool2W = self.pool2.eval({self.eval_data: [imgRst]})[0]
+
+        self.gridView([conv1W,conv2W])
+
+        #self.gridView(conv2W)
+
+        #self.gridView(relu1W)
+
+        #self.gridView(relu2W)
+
+        #self.gridView(pool1W)
+
+        #self.gridView(pool2W)
 
         sess.close()
 
