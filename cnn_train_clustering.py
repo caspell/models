@@ -90,7 +90,7 @@ class MNISTtrain :
 
             self.logits = tf.matmul(hidden, fc2_weight) + fc2_bias
 
-        self.cost = tf.reduce_mean(tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits , labels=train_labels_node), name='cost')
+        self.cost = tf.reduce_mean(tf.nn.sparse_softmax_cross_entropy_with_logits(logits=self.logits , labels=train_labels_node), name='cost')
 
         self.cost += 5e-4 * ( tf.nn.l2_loss(fc1_weight) + tf.nn.l2_loss(fc1_bias) + tf.nn.l2_loss(fc2_weight) + tf.nn.l2_loss(fc2_bias) )
 
