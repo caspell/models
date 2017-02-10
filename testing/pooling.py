@@ -7,6 +7,7 @@ import gzip
 from PIL import Image
 
 import matplotlib.pyplot as plt
+import matplotlib.image as image
 from utils import mnist_cnn
 
 from tensorflow.examples.tutorials.mnist import input_data
@@ -29,54 +30,24 @@ imageDir = '/home/mhkim/data/images'
 
 imagePath = os.path.join(imageDir, 'number_font.png')
 
-img = Image.open(imagePath)
+#img = Image.open(imagePath)
+
+img = image.imread(imagePath)
+
+#plt.imshow(img)
+#plt.show()
+
+imgShape = np.shape(img)
+imgNdim = np.ndim(img)
+
+print ( np.size(img) )
+
+height , widht , _ = imgShape
 
 
-#print ( plt.imread(imagePath))
-
-#print(img.size)
-
-ImgData = tf.placeholder(tf.float32, [1, img.size[1], img.size[0], 3], 'img_data')
-
-pix = img.load()
-
-arr1 = []
-for x in range(img.size[1]) :
-    arr2 = []
-    for y in range(img.size[0]):
-        a, b, c , _ = pix[y , x]
-        arr2.append((a, b, c))
-    arr1.append(arr2)
 
 sess = tf.InteractiveSession()
 
 
-values = ImgData.eval({ImgData:[arr1]})
-
-#print ( values)
-
-pool = tf.nn.max_pool(values, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME')
-
-result = pool.eval()
-
-#print ( result)
-
-print(result.ndim)
-print(result.shape)
-
-#print ( result[0], result[1] , result[2] , result[3] )
-#res = tf.reshape(result, [result[0], result[1] * result[2] * result[3]])
-
-#print ( res)
-
-#print(result.reshape())
-
-values = result[0]
-
-plt.imshow(result[0])
-plt.show()
-
-#mnistCnn = mnist_cnn.MnistCnn()
-#resultValue = mnistCnn.execute(test_data)
 
 sess.close()

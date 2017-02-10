@@ -1,6 +1,9 @@
 import tensorflow as tf
+import numpy as np
+import matplotlib.pyplot as plt
 
 from utils import mnist_common as cmm
+import matplotlib.gridspec as gridspec
 
 class MnistCnn () :
     train_checkpoint = '/home/mhkim/data/checkpoint/mnist_cnn/save.ckpt'
@@ -15,9 +18,9 @@ class MnistCnn () :
         self.eval_data = tf.placeholder( tf.float32, shape=(1, self.IMAGE_SIZE, self.IMAGE_SIZE, self.NUM_CHANNELS), name='eval_data')
 
         W1 = tf.Variable(tf.truncated_normal([5, 5, self.NUM_CHANNELS, 32], stddev=0.1, seed=self.SEED, dtype=tf.float32), name='W1')
-        W2 = tf.Variable(tf.truncated_normal([5, 5, 32, 64], stddev=0.1, seed=self.SEED, dtype=tf.float32), name='W2')
-
         b1 = tf.Variable(tf.zeros([32], dtype=tf.float32), name='bias1')
+
+        W2 = tf.Variable(tf.truncated_normal([5, 5, 32, 64], stddev=0.1, seed=self.SEED, dtype=tf.float32), name='W2')
         b2 = tf.Variable(tf.constant(0.1, shape=[64], dtype=tf.float32), name='bias2')
 
         fc1_weight = tf.Variable( tf.truncated_normal([self.IMAGE_SIZE // 4 * self.IMAGE_SIZE // 4 * 64, 512], stddev=0.1, seed=self.SEED, dtype=tf.float32), name='fc1_weight')
@@ -28,12 +31,28 @@ class MnistCnn () :
 
         with tf.name_scope('model'):
             conv = tf.nn.conv2d(self.eval_data, W1, strides=[1, 1, 1, 1], padding='SAME')
+
+            self.conv1 = conv
+
             relu = tf.nn.relu(tf.nn.bias_add(conv, b1), name='relu1')
+
+            self.relu1 = relu
+
             pool = tf.nn.max_pool(relu, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME')
 
+            self.pool1 = pool
+
             conv = tf.nn.conv2d(pool, W2, strides=[1, 1, 1, 1], padding='SAME')
+
+            self.conv2 = conv
+
             relu = tf.nn.relu(tf.nn.bias_add(conv, b2))
+
+            self.relu2 = relu
+
             pool = tf.nn.max_pool(relu, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME')
+
+            self.pool2 = pool
 
             pool_shape = pool.get_shape().as_list()
 
@@ -43,19 +62,85 @@ class MnistCnn () :
 
             logits = tf.matmul(hidden, fc2_weight) + fc2_bias
 
-        self.eval_prediction = tf.nn.softmax(logits)
+        #self.eval_prediction = tf.nn.softmax(logits)
+        self.eval_prediction = logits
+
+        # sess = tf.InteractiveSession()
+        # init = tf.global_variables_initializer()
+        # sess.run(init)
+        # saver = tf.train.Saver()
+        # saver.restore(sess, self.train_checkpoint)
+        # sess.close()
+
+    def scan (self, data) :
+
+        print ( np.shape(data) )
+
+        data_height , data_width , data_channel = np.shape(data)
+
+        input_data = tf.placeholder(tf.float32, shape=(data_height , data_width , data_channel))
+
+        W1 = tf.Variable(tf.truncated_normal([data_height, 5, data_channel, data_width / 5], stddev=0.1, seed=self.SEED, dtype=tf.float32))
+
+        b1 = tf.Variable(tf.zeros([data_width / 5], dtype=tf.float32))
 
         sess = tf.InteractiveSession()
 
-        init = tf.global_variables_initializer()
+        conv1 = tf.nn.conv2d(input_data, W1, strides=[1,1,1,1], padding='SAME')
 
-        sess.run(init)
+        result = conv1.eval({input_data : data})
 
-        saver = tf.train.Saver()
-
-        saver.restore(sess, self.train_checkpoint)
+        print (result)
 
         sess.close()
+
+        return "not yet"
+
+    def showGraph(self, imgRst) :
+
+        prst = self.pool2.eval({self.eval_data: [imgRst]})[0]
+
+        print(np.shape(prst))
+        _, _, channel = np.shape(prst)
+
+        index = 0
+
+        fig = plt.figure()
+
+        gs = gridspec.GridSpec(8, 8, wspace=0.0)
+        ax = [plt.subplot(gs[i]) for i in (range(64))]
+        gs.update(hspace=0)
+        for j in range(8):
+            for i in range(8):
+                _list = prst[:, :, index:index + 1:]
+                _list = np.squeeze(_list, axis=2)
+                ax[index].imshow(_list)
+                index += 1
+
+        plt.show()
+
+    def gridView(self, imageData) :
+        r, c, channel = np.shape(imageData)
+
+        cell = int(channel / 10 + 1)
+
+        index = 0
+
+        fig = plt.figure()
+
+        gs = gridspec.GridSpec(channel, channel, wspace=0.0)
+
+        ax = [plt.subplot(gs[i]) for i in (range(channel))]
+
+        gs.update(hspace=0)
+
+        for i in range(channel):
+            _list = imageData[:, :, index:index + 1:]
+            _list = np.squeeze(_list, axis=2)
+            ax[index].imshow(_list)
+            index += 1
+
+        plt.show()
 
     def execute (self, data) :
 
@@ -65,33 +150,73 @@ class MnistCnn () :
         saver = tf.train.Saver()
         saver.restore(sess, self.train_checkpoint)
 
-        result = tf.argmax(self.eval_prediction, 1)
+#        image = tf.placeholder("float", [None, None, 4])
 
-        print ( self.eval_prediction.eval({self.eval_data: data}) )
+        #_count , _, _ ,_ = np.shape(data)
 
-        resultValue = result.eval({self.eval_data: data})[0]
+        diff = 4 - np.ndim(data)
 
-        '''
-        imageBuff = []
-        for i in range(28) :
-            _row = []
-            for j in range(28) :
-                _cell = test_data[0][i][j][0]
-                if _cell < 0 :
-                    _cell = 0
-                else :
-                    _cell = 1
-                _row.append(_cell)
-            imageBuff.append(_row)
-            print ( _row)
+        for i in range(diff) :
+            data = [data]
 
-        plt.imshow ( imageBuff )
-        plt.show()
-        '''
+        returnValues = []
+
+        for imgRst in data :
+
+            _h , _w , _ = np.shape(imgRst)
+
+            result = tf.argmax(tf.nn.softmax(self.eval_prediction), 1)
+
+            resultValue = result.eval({self.eval_data: [imgRst]})[0]
+
+            returnValues.append(resultValue)
+
+        conv1W = self.conv1.eval({self.eval_data: [imgRst]})[0]
+
+        conv1W = self.conv1.eval({self.eval_data: [imgRst]})[0]
+
+        self.gridView(conv1W)
+
+
 
         sess.close()
 
-        return resultValue
+
+ #       slice = tf.slice(image, [0, 0, 0], [-1, -1, 1])
+
+#        imgRst = sess.run(slice, feed_dict={image: data})
+
+        ##imgOp = tf.image.resize_images(imgT, (185, 185))
+
+        #imgRst = np.squeeze(imgRst, 2)
+
+        #print(np.shape(data))
+        #print(np.shape(imgRst))
+
+  #      ictobb = tf.image.crop_to_bounding_box(imgRst, 0, 300, 185, 70)
+
+        #print (np.shape(ictobb.eval()))
+
+   #     riwcop = tf.image.resize_images(ictobb, (28, 28))
+
+    #    imgRst = riwcop.eval()
+
+
+        #plt.imshow(np.squeeze(imgRst, 2))
+        #plt.show()
+
+        #print ( np.shape(imgRst))
+
+
+#         result = tf.argmax(tf.nn.softmax(self.eval_prediction), 1)
+#
+# #        print ( tf.nn.softmax(self.eval_prediction).eval({self.eval_data: [imgRst]}) )
+#
+#         resultValue = result.eval({self.eval_data: [imgRst]})[0]
+#
+#         sess.close()
+
+        return returnValues
 
 if __name__ == '__main__' :
 
@@ -101,8 +226,27 @@ if __name__ == '__main__' :
     test_data = cmm.extract_data(test_data_filename, 1)
     test_labels = cmm.extract_labels(test_labels_filename, 1)
 
+
+    # for _img in test_data :
+    #     mnistCnn = MnistCnn()
+    #     resultValue = mnistCnn.execute(_img)
+    #     print ( resultValue )
+    #     plt.imshow(np.squeeze(_img, 2))
+    #     plt.show()
+
+
+
+#    img = cmm.get_image()
+
+    #print ( np.shape(img))
+
+    #test_data = cmm.pack(test_data)
+
     mnistCnn = MnistCnn()
 
+    #resultValue = mnistCnn.scan(test_data)
     resultValue = mnistCnn.execute(test_data)
 
     print ( resultValue )
+
+    #cmm.packShow(test_data)

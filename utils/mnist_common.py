@@ -11,6 +11,7 @@ import os
 import sys
 import time
 from six.moves import urllib
+import matplotlib.image as image
 
 train_checkpoint = '/home/mhkim/data/checkpoint/mnist_cnn/save.ckpt'
 
@@ -66,3 +67,40 @@ def xavier_init(n_inputs, n_outputs, uniform=True):
     else :
         stddev = tf.sqrt(3.0 / (n_inputs + n_outputs))
         return tf.truncated_normal_initializer(stddev=stddev)
+
+def get_image() :
+    imageDir = '/home/mhkim/data/images'
+    imagePath = os.path.join(imageDir, 'number_font.png')
+    imgSrc = image.imread(imagePath)
+    return imgSrc
+
+
+def masking ( img ) :
+    mask = img.convert("L")
+    return mask.point(lambda i : i < 100 and 255)
+
+def pack(arr):
+
+    count, height, width, channel = np.shape(arr)
+
+    maxWidth = 0
+    maxHeight = 0
+    for i in range(count):
+        h, w, c = np.shape(arr[i])
+        maxWidth += w
+        if maxHeight < h:
+            maxHeight = h
+
+    buff = np.zeros((maxHeight, maxWidth, channel))
+
+    for i in range(count):
+        buff[:height, i * width:i * width + width, :] = arr[i]
+
+    return buff
+
+def packShow(arr):
+
+    buff = pack(arr)
+
+    plt.imshow(np.squeeze(buff, axis=np.ndim(buff) - 1))
+    plt.show()
