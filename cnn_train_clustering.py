@@ -55,7 +55,12 @@ class MNISTtrain :
 
     train_size = train_labels.shape[0]
 
+
     def __init__(self):
+        pass
+        #initializer()
+
+    def initializer(self):
 
         train_data_node = tf.placeholder( tf.float32, shape=(BATCH_SIZE, IMAGE_SIZE, IMAGE_SIZE, NUM_CHANNELS) , name="train_data_node")
         train_labels_node = tf.placeholder(tf.int64, shape=(BATCH_SIZE,), name="train_labels_node")
@@ -94,6 +99,7 @@ class MNISTtrain :
 
         self.cost += 5e-4 * ( tf.nn.l2_loss(fc1_weight) + tf.nn.l2_loss(fc1_bias) + tf.nn.l2_loss(fc2_weight) + tf.nn.l2_loss(fc2_bias) )
 
+
     def get_loss (self) :
         return self.cost
 
@@ -101,6 +107,8 @@ class MNISTtrain :
         return int(self.num_epochs * self.train_size) // BATCH_SIZE
 
     def get_train (self , global_step) :
+
+        self.initializer()
 
         learning_rate = tf.train.exponential_decay(0.01, global_step * BATCH_SIZE, self.train_size, 0.95, staircase=True, name='decay_learning_rate')
 

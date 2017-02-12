@@ -44,7 +44,7 @@ def main(_):
             # 모델 구축...
             #loss = mnistTrain.get_loss()
 
-            global_step = tf.Variable(0, dtype=tf.float32, name='batch')
+            global_step = tf.get_variable("global_step", dtype=tf.float32)
 
             train_op = mnistTrain.get_train(global_step)
 
@@ -75,26 +75,28 @@ def main(_):
 
                 if sv.should_stop() : break
 
-                offset = (step * MNISTtrain.BATCH_SIZE) % (MNISTtrain.train_size - MNISTtrain.BATCH_SIZE)
-                batch_data = MNISTtrain.train_data[offset: (offset + MNISTtrain.BATCH_SIZE)]
-                batch_labels = MNISTtrain.train_labels[offset:(offset + MNISTtrain.BATCH_SIZE)]
+                print("step : " , step)
 
-                feed_dict = {MNISTtrain.train_data_node: batch_data, MNISTtrain.train_labels_node: batch_labels}
+                # offset = (step * MNISTtrain.BATCH_SIZE) % (MNISTtrain.train_size - MNISTtrain.BATCH_SIZE)
+                # batch_data = MNISTtrain.train_data[offset: (offset + MNISTtrain.BATCH_SIZE)]
+                # batch_labels = MNISTtrain.train_labels[offset:(offset + MNISTtrain.BATCH_SIZE)]
+                #
+                # feed_dict = {MNISTtrain.train_data_node: batch_data, MNISTtrain.train_labels_node: batch_labels}
+                #
+                # _, step = sess.run([train_op, global_step] , feed_dict=feed_dict)
 
-                _, step = sess.run([train_op, global_step] , feed_dict=feed_dict)
-
-                if step % MNISTtrain.EVAL_FREQUENCY == 0:
-                    l, lr, predictions = sess.run([MNISTtrain.cost, MNISTtrain.learning_rate, MNISTtrain.train_prediction], feed_dict=feed_dict)
-                    elapsed_time = time.time() - start_time
-                    start_time = time.time()
-
-                    print('--------------------------------------------------------------------')
-                    print('Step %d (epoch %.2f), %.1f ms' % (
-                      step, float(step) * MNISTtrain.BATCH_SIZE / MNISTtrain.train_size, 1000 * elapsed_time / MNISTtrain.EVAL_FREQUENCY))
-                    print('Minibatch loss: %.3f, learning rate: %.6f' % (l, lr))
-
-                    print('Step %d (epoch %.2f), %.1f ms' % (
-                    step, float(step) * MNISTtrain.BATCH_SIZE / MNISTtrain.train_size, 1000 * elapsed_time / MNISTtrain.EVAL_FREQUENCY))
+                # if step % MNISTtrain.EVAL_FREQUENCY == 0:
+                #     l, lr, predictions = sess.run([MNISTtrain.cost, MNISTtrain.learning_rate, MNISTtrain.train_prediction], feed_dict=feed_dict)
+                #     elapsed_time = time.time() - start_time
+                #     start_time = time.time()
+                #
+                #     print('--------------------------------------------------------------------')
+                #     print('Step %d (epoch %.2f), %.1f ms' % (
+                #       step, float(step) * MNISTtrain.BATCH_SIZE / MNISTtrain.train_size, 1000 * elapsed_time / MNISTtrain.EVAL_FREQUENCY))
+                #     print('Minibatch loss: %.3f, learning rate: %.6f' % (l, lr))
+                #
+                #     print('Step %d (epoch %.2f), %.1f ms' % (
+                #     step, float(step) * MNISTtrain.BATCH_SIZE / MNISTtrain.train_size, 1000 * elapsed_time / MNISTtrain.EVAL_FREQUENCY))
 
         sv.stop()
 
