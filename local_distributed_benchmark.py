@@ -46,12 +46,12 @@ def create_graph(device1, device2):
 
     with tf.device(device1):
         params = tf.get_variable("params", [params_size], dtype,
-                                 initializer=tf.zeros_initializer)
+                                 initializer=tf.zeros_initializer())
     with tf.device(device2):
         # constant node gets placed on device1 because of simple_placer
         #    update = tf.constant(1, shape=[params_size], dtype=dtype)
         update = tf.get_variable("update", [params_size], dtype,
-                                 initializer=tf.ones_initializer)
+                                 initializer=tf.ones_initializer())
         add_op = params.assign_add(update)
 
     init_op = tf.initialize_all_variables()
