@@ -44,7 +44,8 @@ def main(_):
             # 모델 구축...
             #loss = mnistTrain.get_loss()
 
-            global_step = tf.get_variable("global_step", dtype=tf.float32)
+            global_step = tf.get_variable("global_step", [1], dtype=tf.float32)
+
 
             train_op = mnistTrain.get_train(global_step)
 
