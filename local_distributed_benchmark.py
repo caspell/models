@@ -54,7 +54,7 @@ def create_graph(device1, device2):
                                  initializer=tf.ones_initializer())
         add_op = params.assign_add(update)
 
-    init_op = tf.initialize_all_variables()
+    init_op = tf.global_variables_initializer()
     return init_op, add_op
 
 
