@@ -209,8 +209,8 @@ if __name__ == '__main__' :
 
     print ( '------------------------------------------------------------------' )
 
-    resultValue = mnistCnn.execute(test_data)
+    #resultValue = mnistCnn.execute(test_data)
     #
-    print ( resultValue )
+    #print ( resultValue )
 
-    #mnistCnn.train()
+    mnistCnn.train()
