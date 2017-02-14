@@ -98,6 +98,29 @@ def pack(arr):
 
     return buff
 
+def getCanvas (height , width , channel=1) :
+    return np.zeros((height , width , channel))
+
+def imageCopy (origin, input) :
+
+    if np.ndim(input) > 3 :
+        return None
+
+    oHeight, oWidth, oChannel = np.shape(origin)
+    height, width, channel = np.shape(input)
+
+    if oHeight < height or oWidth < height or oChannel < channel :
+        return None
+
+    offset = ( int(oHeight / 2) - int(height / 2) , int(oWidth / 2) - int(width / 2) , channel )
+
+    #np.zeros_like()
+    buff = np.copy(origin)
+
+    buff[offset[0]:offset[0]+height, offset[1]:offset[1]+width, :] = input
+
+    return buff
+
 def packShow(arr):
 
     buff = pack(arr)

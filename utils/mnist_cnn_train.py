@@ -130,17 +130,6 @@ class MnistCnn :
                     elapsed_time = time.time() - start_time
                     #start_time = time.time()
                     print ('Step %d , %.2f s' % (step, elapsed_time))
-                #
-                #     print('--------------------------------------------------------------------')
-                #     print('Step %d (epoch %.2f), %.1f ms' % (
-                #         step, float(step) * self.BATCH_SIZE / train_size, 1000 * elapsed_time / self.EVAL_FREQUENCY))
-                #     print('Minibatch loss: %.3f, learning rate: %.6f' % (l, lr))
-                #     # print('Minibatch error: %.1f%%' % error_rate(predictions, batch_labels))
-                #     # print('Validation error: %.1f%%' % error_rate(eval_in_batches(validation_data, sess), validation_labels))
-                #
-                #     print('Step %d (epoch %.2f), %.1f ms' % (
-                #     step, float(step) * self.BATCH_SIZE / train_size, 1000 * elapsed_time / self.EVAL_FREQUENCY))
-                #     # , error_rate(eval_in_batches(validation_data, sess), validation_labels) ))
 
             elapsed_time = time.time() - start_time
 
@@ -197,17 +186,41 @@ class MnistCnn :
 
         return resultValue
 
+    def picture (self) :
+
+        # input = tf.placeholder(dtype=tf.float32
+        #                        , shape=() , name='')
+        pass
+
+
+
 if __name__ == '__main__' :
 
     test_data_filename = cmm.maybe_download('t10k-images-idx3-ubyte.gz')
     test_labels_filename = cmm.maybe_download('t10k-labels-idx1-ubyte.gz')
 
-    test_data = cmm.extract_data(test_data_filename, 1)
-    test_labels = cmm.extract_labels(test_labels_filename, 1)
+    test_data = cmm.extract_data(test_data_filename, 10)
+    test_labels = cmm.extract_labels(test_labels_filename, 10)
+
+    #
+    # test_data = cmm.pack(test_data)
+    #
+    # origin = cmm.getCanvas(480 , 640)
+    #
+    # print (np.shape(origin))
+    #
+    # # plt.imshow(np.squeeze(origin, axis=2))
+    # # plt.show()
+    #
+    # origin = cmm.imageCopy(origin , test_data)
+    #
+    #
+    # plt.imshow(np.squeeze(origin, axis=2))
+    # plt.show()
 
     mnistCnn = MnistCnn()
 
-    print ( '------------------------------------------------------------------' )
+    #print ( '------------------------------------------------------------------' )
 
     #resultValue = mnistCnn.execute(test_data)
     #

@@ -40,7 +40,7 @@ class FontUtil :
 
             font = ImageFont.truetype(fontPath, 30)
 
-            draw.text((6, -4), _char, font=font)
+            draw.text((0, -5), _char, font=font)
 
             im = im.convert('L')
 
@@ -61,6 +61,27 @@ class FontUtil :
             print ('error ' , font)
     '''
 
+def test() :
+    fontUtil = FontUtil()
+
+    test = '/usr/share/fonts/truetype/unfonts-core/UnDotum.ttf'
+
+    # test = img.imread(test)
+
+    # plt.imshow(test)
+    # plt.show()
+
+    result = fontUtil.getToImage(test, 'abvc')
+
+    # print(result)
+
+    for r in result[0]:
+        print(np.shape(r))
+        # print ( r )
+
+        plt.imshow(np.squeeze(r, axis=2))
+        plt.show()
+
 def main() :
 
     fontUtil = FontUtil()
@@ -72,27 +93,46 @@ def main() :
     # plt.imshow(test)
     # plt.show()
 
-    #result = fontUtil.getToImage(test, '0123456789')
-    fontUtil.load('fonts.txt')
-    results = fontUtil.getFullImages()
+    result = fontUtil.getToImage(test, '0123')
+
+    # print(result)
+
+    for r in result[0] :
+        print ( np.shape(r) )
+        # print ( r )
+
+        plt.imshow(np.squeeze(r, axis=2))
+        plt.show()
+
+
+    #--------------
+    # fontUtil.load('fonts.txt')
+    # results = fontUtil.getFullImages()
     #print(result)
 
-    mnistCnn = mnist_cnn_train.MnistCnn()
-
-    print ( np.shape(results) )
-
-    for result in results :
-
-        labels = result[1]
-        datas = result[0]
-
-        for i in range(len(result[0])):
-            resultValue = mnistCnn.execute([datas[i]])
-
-            if int(labels[i]) != int(resultValue) :
-                print ( labels[i] , resultValue )
-
+    # mnistCnn = mnist_cnn_train.MnistCnn()
     #
+    # print ( np.shape(results) )
+    #
+    # total_count = 0
+    # notmatch_count = 0
+    #
+    # for result in results :
+    #     print ('step %d' % (total_count / 10))
+    #
+    #     labels = result[1]
+    #     datas = result[0]
+    #
+    #     for i in range(len(result[0])):
+    #         resultValue = mnistCnn.execute([datas[i]])
+    #         total_count += 1
+    #         if int(labels[i]) != int(resultValue) :
+    #             notmatch_count += 1
+    #
+    # print('%.2f' % (total_count / notmatch_count), '%')
+
+
+    #--------------
     # for r in result[0] :
     #     #print ( np.shape([r]) )
     #     resultValue = mnistCnn.execute([r])
