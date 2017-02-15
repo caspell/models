@@ -8,7 +8,8 @@ import sys
 
 class MnistCnn :
 
-    train_checkpoint = '/home/mhkim/data/checkpoint/mnist_cnn/save.ckpt'
+    #train_checkpoint = './checkpoint/mnist_cnn/save.ckpt'
+    train_checkpoint = '/home/mhkim/data/checkpoint/mnist_cnn_ex/save.ckpt'
 
     IMAGE_SIZE = 28
     NUM_CHANNELS = 1
@@ -166,7 +167,7 @@ class MnistCnn :
 
         logits = self.model(eval_data, 'model')
 
-        self.eval_prediction = tf.nn.softmax(logits)
+        eval_prediction = tf.nn.softmax(logits)
 
         sess = tf.InteractiveSession()
         init = tf.global_variables_initializer()
@@ -174,9 +175,9 @@ class MnistCnn :
         saver = tf.train.Saver()
         saver.restore(sess, self.train_checkpoint)
 
-        result = tf.argmax(self.eval_prediction, 1)
+        result = tf.argmax(eval_prediction, 1)
 
-#        print ( self.eval_prediction.eval({eval_data: data}) )
+#        print ( eval_prediction.eval({eval_data: data}) )
 
         resultValue = result.eval({eval_data: data})[0]
 
@@ -186,12 +187,55 @@ class MnistCnn :
 
         return resultValue
 
-    def picture (self) :
+    def parseImage (self, image) :
 
-        # input = tf.placeholder(dtype=tf.float32
-        #                        , shape=() , name='')
+        y , x , _ = np.shape(image)
+
+        if y > x : basic = x
+        else : basic = y
+
+        cell = int(basic / 10)
+
+        if x % cell > 0 :
+            bg = cmm.getCanvas(y, (x / cell + 1) * cell)
+            image = cmm.imageCopy(bg , image)
+
+        if y % cell > 0 :
+            bg = cmm.getCanvas(int(y / cell + 1) * cell, x)
+            image = cmm.imageCopy(bg, image)
+
+        y, x, _ = np.shape(image)
+
+        return ( image , cell , int ( y / cell * x / cell ) )
+
+    def pulv (self, image , cell , batch_size):
         pass
 
+    def findInPicture (self, image) :
+
+        image , cell , batch_size = self.parseImage(image)
+
+        imageArray = self.pulv ( image , cell , batch_size )
+
+        input = tf.placeholder(dtype=tf.float32 , shape=(batch_size , cell , cell, 1) , name='input_data')
+
+        eval_prediction = self.model(input)
+
+        sess = tf.InteractiveSession()
+        init = tf.global_variables_initializer()
+        sess.run(init)
+        saver = tf.train.Saver()
+        saver.restore(sess, self.train_checkpoint)
+
+        result = tf.argmax(eval_prediction, 1)
+
+        print ( eval_prediction.eval({input: imageArray }) )
+
+        resultValue = result.eval({input: imageArray })[0]
+
+        # self.showImage(data)
+
+        sess.close()
 
 
 if __name__ == '__main__' :
@@ -199,31 +243,40 @@ if __name__ == '__main__' :
     test_data_filename = cmm.maybe_download('t10k-images-idx3-ubyte.gz')
     test_labels_filename = cmm.maybe_download('t10k-labels-idx1-ubyte.gz')
 
-    test_data = cmm.extract_data(test_data_filename, 10)
-    test_labels = cmm.extract_labels(test_labels_filename, 10)
-
-    #
-    # test_data = cmm.pack(test_data)
-    #
-    # origin = cmm.getCanvas(480 , 640)
-    #
-    # print (np.shape(origin))
-    #
-    # # plt.imshow(np.squeeze(origin, axis=2))
-    # # plt.show()
-    #
-    # origin = cmm.imageCopy(origin , test_data)
-    #
-    #
-    # plt.imshow(np.squeeze(origin, axis=2))
-    # plt.show()
+    test_data = cmm.extract_data(test_data_filename, 1)
+    test_labels = cmm.extract_labels(test_labels_filename, 1)
 
     mnistCnn = MnistCnn()
 
+
+    # test_data = cmm.pack(test_data)
+    #
+    # origin = cmm.getCanvas(1480 , 640)
+    #
+    # print (np.shape(origin))
+    #
+    # origin = cmm.imageCopy(origin , test_data)
+    #
+    # mnistCnn.findInPicture(origin)
+
+
+
+    # plt.imshow(np.squeeze(origin, axis=2))
+    # plt.show()
+
+#    mnistCnn = MnistCnn()
+
     #print ( '------------------------------------------------------------------' )
 
-    #resultValue = mnistCnn.execute(test_data)
+    # print (np.shape(test_data))
     #
-    #print ( resultValue )
+    # test_data = np.zeros_like(test_data)
+    #
+    # print(np.shape(test_data))
 
-    mnistCnn.train()
+    # mnistCnn.showImage(test_data)
+
+    resultValue = mnistCnn.execute(test_data)
+    print ( resultValue )
+
+    # mnistCnn.train()

@@ -13,8 +13,6 @@ import time
 from six.moves import urllib
 import matplotlib.image as image
 
-train_checkpoint = '/home/mhkim/data/checkpoint/mnist_cnn/save.ckpt'
-
 SOURCE_URL = 'http://yann.lecun.com/exdb/mnist/'
 WORK_DIRECTORY = '/home/mhkim/data/mnist'
 
@@ -79,7 +77,7 @@ def masking ( img ) :
     mask = img.convert("L")
     return mask.point(lambda i : i < 100 and 255)
 
-def pack(arr):
+def pack(arr, spacing=0.):
 
     count, height, width, channel = np.shape(arr)
 
@@ -93,8 +91,14 @@ def pack(arr):
 
     buff = np.zeros((maxHeight, maxWidth, channel))
 
+    acc = (lambda i : i * int(width * spacing))
+
     for i in range(count):
-        buff[:height, i * width:i * width + width, :] = arr[i]
+        beginWidth = i * width
+        if spacing > 0. : beginWidth -= acc(i)
+
+        endWidth = beginWidth + width
+        buff[:height, beginWidth :endWidth , :] = arr[i]
 
     return buff
 
@@ -109,7 +113,7 @@ def imageCopy (origin, input) :
     oHeight, oWidth, oChannel = np.shape(origin)
     height, width, channel = np.shape(input)
 
-    if oHeight < height or oWidth < height or oChannel < channel :
+    if oHeight < height or oWidth < width or oChannel < channel :
         return None
 
     offset = ( int(oHeight / 2) - int(height / 2) , int(oWidth / 2) - int(width / 2) , channel )

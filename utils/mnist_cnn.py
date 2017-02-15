@@ -234,7 +234,7 @@ if __name__ == '__main__' :
     test_data_filename = cmm.maybe_download('t10k-images-idx3-ubyte.gz')
     test_labels_filename = cmm.maybe_download('t10k-labels-idx1-ubyte.gz')
 
-    test_data = cmm.extract_data(test_data_filename, 100)
+    test_data = cmm.extract_data(test_data_filename, 10)
     test_labels = cmm.extract_labels(test_labels_filename, 1)
 
 
@@ -253,13 +253,13 @@ if __name__ == '__main__' :
 
     #test_data = cmm.pack(test_data)
 
-    cmm.packShow(test_data)
+    #cmm.packShow(test_data)
 
-    #mnistCnn = MnistCnn()
+    mnistCnn = MnistCnn()
 
     #resultValue = mnistCnn.scan(test_data)
-    #resultValue = mnistCnn.execute(test_data)
+    resultValue = mnistCnn.execute(test_data)
 
-    #print ( resultValue )
+    print ( resultValue )
 
     #cmm.packShow(test_data)
