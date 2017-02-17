@@ -1,19 +1,22 @@
 import tensorflow as tf
 import numpy as np
 import matplotlib.pyplot as plt
+
 from utils import mnist_common as cmm
 import time
 import os
 import sys
+import math
+import time
 
 class MnistCnn :
 
     #train_checkpoint = './checkpoint/mnist_cnn/save.ckpt'
-    train_checkpoint = '/home/mhkim/data/checkpoint/mnist_cnn_ex/save.ckpt'
+    train_checkpoint = '/home/mhkim/data/checkpoint/mnist_cnn/'
 
     IMAGE_SIZE = 28
     NUM_CHANNELS = 1
-    NUM_LABELS = 10
+    NUM_LABELS = 10 + 1
     SEED = 66478
     PIXEL_DEPTH = 255
     VALIDATION_SIZE = 5000
@@ -35,6 +38,19 @@ class MnistCnn :
 
         self.test_data = cmm.extract_data(test_data_filename, 10000)
         self.test_labels = cmm.extract_labels(test_labels_filename, 10000)
+
+        zeros1 = np.zeros_like(self.train_data[0])
+        ones1 = np.ones_like(self.train_data[0])
+        fills = np.full_like(self.train_data[0], -0.5)
+
+        self.train_data[0] = zeros1
+        self.train_data[1] = ones1
+        self.train_data[2] = fills
+
+
+        self.train_labels[0] = -1
+        self.train_labels[1] = -1
+        self.train_labels[2] = -1
 
         # Generate a validation set.
         # validation_data = train_data[:self.VALIDATION_SIZE, ...]
@@ -144,17 +160,25 @@ class MnistCnn :
 
     def showImage(self, test_data=None , show=False):
         imageBuff = []
-        for i in range(28):
-            _row = []
-            for j in range(28):
-                _cell = test_data[0][i][j][0]
-                # if _cell < 0:
-                #     _cell = 0
-                # else:
-                #     _cell = 1
-                _row.append(_cell)
-            imageBuff.append(_row)
-            print(_row)
+
+        print(np.shape(test_data))
+
+        # test_data = np.squeeze(test_data)
+
+        for img in test_data :
+            img = np.squeeze(img)
+            for i in range(28):
+                _row = []
+                for j in range(28):
+                    _cell = img[i][j]
+                    if _cell < 0:
+                        _cell = 0
+                    else:
+                        _cell = 1
+                    _row.append(_cell)
+                imageBuff.append(_row)
+                print(_row)
+            print('--------------------------------------------------------')
 
         if show :
             plt.imshow(imageBuff)
@@ -162,8 +186,26 @@ class MnistCnn :
 
     def execute (self, data) :
 
-        eval_data = tf.placeholder(tf.float32, shape=(1, self.IMAGE_SIZE, self.IMAGE_SIZE, self.NUM_CHANNELS),
+        diff = 4 - np.ndim(data)
+
+        for i in range(diff):
+            data = [data]
+
+        batch_size = np.shape(data)[0]
+
+        eval_data = tf.placeholder(tf.float32, shape=(batch_size, self.IMAGE_SIZE, self.IMAGE_SIZE, self.NUM_CHANNELS),
                                    name='eval_data')
+
+        # returnValues = []
+        #
+        # for imgRst in data:
+        #     _h, _w, _ = np.shape(imgRst)
+        #
+        #     result = tf.argmax(tf.nn.softmax(self.eval_prediction), 1)
+        #
+        #     resultValue = result.eval({self.eval_data: [imgRst]})[0]
+        #
+        #     returnValues.append(resultValue)
 
         logits = self.model(eval_data, 'model')
 
@@ -173,19 +215,177 @@ class MnistCnn :
         init = tf.global_variables_initializer()
         sess.run(init)
         saver = tf.train.Saver()
-        saver.restore(sess, self.train_checkpoint)
+        saver.restore(sess, os.path.join(self.train_checkpoint, 'save.ckpt'))
 
         result = tf.argmax(eval_prediction, 1)
 
-#        print ( eval_prediction.eval({eval_data: data}) )
+        logitResult = logits.eval({eval_data: data})
+        predictResult = eval_prediction.eval({eval_data: data})
 
-        resultValue = result.eval({eval_data: data})[0]
+        resultValue = result.eval({eval_data: data})
+
+        # for i in range(batch_size) :
+        #     print('--------------------------------------------------------------------------------------')
+        #     print (resultValue[i])
+        #     print(['%.2f' % x for x in logitResult[i]])
+        #     print(['%.8f' % x for x in predictResult[i]])
+        #     print('--------------------------------------------------------------------------------------')
 
         #self.showImage(data)
 
         sess.close()
 
         return resultValue
+
+    def getSoftmaxValuesHistogram (self, data) :
+
+        diff = 4 - np.ndim(data)
+
+        for i in range(diff):
+            data = [data]
+
+        batch_size = np.shape(data)[0]
+
+        eval_data = tf.placeholder(tf.float32, shape=(batch_size, self.IMAGE_SIZE, self.IMAGE_SIZE, self.NUM_CHANNELS))
+
+        logits = self.model(eval_data, 'model')
+
+        # eval_prediction = tf.nn.softmax(logits)
+
+        init = tf.global_variables_initializer()
+
+        sess = tf.InteractiveSession()
+        sess.run(init)
+        saver = tf.train.Saver()
+        saver.restore(sess, os.path.join(self.train_checkpoint, 'save.ckpt'))
+
+        logitResult = logits.eval({eval_data: data})
+        # predictResult = eval_prediction.eval({eval_data: data})
+
+        # for i in range(batch_size) :
+        #     if np.max(logitResult[i]) < 10 :
+        #         print('--------------------------------------------------------------------------------------')
+        #         print ('index %d' %i)
+        #         print (np.max(logitResult[i]))
+        #         print(['%.2f' % x for x in logitResult[i]])
+        #         print('--------------------------------------------------------------------------------------')
+
+        resultValue = [np.max(logitResult[i]) for i in range(batch_size)]
+
+        sess.close()
+
+        return resultValue
+
+    def test (self, data):
+
+        h , w , c = np.shape(data)
+
+        input = tf.placeholder(dtype=tf.float32, shape=(1, h , w , c), name='input1')
+
+        pool = tf.nn.max_pool(input, ksize=[1, 2, 4, 1], strides=[1, 2, 4, 1], padding='SAME')
+        #pool = tf.nn.max_pool(pool, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME')
+        # pool = tf.nn.max_pool(pool, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME')
+
+        init = tf.global_variables_initializer()
+        sess = tf.InteractiveSession()
+        sess.run(init)
+
+        result = pool.eval({input:[data]})
+
+        # print ( result )
+
+        sess.close();
+
+        print (np.shape(result[0]))
+
+        plt.imshow(np.squeeze(result[0], 2))
+        plt.show()
+
+    def find (self, data) :
+
+        CHAR_WIDTH = 28
+
+        h , w , c = np.shape(data)
+
+        base_size = CHAR_WIDTH * 2
+
+        _y = math.ceil(h / CHAR_WIDTH / 2)
+
+        _x = math.ceil(w / CHAR_WIDTH / 2)
+
+        h , w =  _y * base_size , _x * base_size
+
+        canvas = cmm.getCanvas(h , w)
+
+        data = cmm.imageCopy(canvas, data)
+
+        size = _y * _x
+
+        input = tf.placeholder(dtype=tf.float32, shape=(h , w , c), name='input1')
+
+        A = tf.TensorArray(tf.float32, size=size)
+        #A = tf.TensorArray(tf.int64, size=size)
+
+        positions = []
+
+        for i in range(size) :
+
+            offset = ((i // _x) * base_size, (i % _x) * base_size)
+
+            positions.append(offset)
+
+            tfImage = tf.image.crop_to_bounding_box(input, offset[0] , offset[1], base_size, base_size)
+
+            tfImage = tf.reshape(tfImage, [1, base_size , base_size , c])
+
+            # imagePooling = tf.nn.max_pool(tfImage, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME')
+            # pool_shape = imagePooling.get_shape().as_list()
+            # reshape = tf.reshape(imagePooling, [pool_shape[0], pool_shape[1] , pool_shape[2], 1])
+            # conv = tf.nn.conv2d(reshape , self.W1, strides=[1, 1, 1, 1], padding='SAME')
+            # relu = tf.nn.relu(tf.nn.bias_add(conv, self.b1))
+            # pool = tf.nn.max_pool(relu, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME')
+
+            conv = tf.nn.conv2d(tfImage , self.W1, strides=[1, 1, 1, 1], padding='SAME')
+            relu = tf.nn.relu(tf.nn.bias_add(conv, self.b1))
+            pool = tf.nn.max_pool(relu, ksize=[1, 4, 4, 1], strides=[1, 4, 4, 1], padding='SAME')
+
+            conv = tf.nn.conv2d(pool, self.W2, strides=[1, 1, 1, 1], padding='SAME')
+            relu = tf.nn.relu(tf.nn.bias_add(conv, self.b2))
+            pool = tf.nn.max_pool(relu, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME')
+
+            pool = tf.nn.max_pool(relu, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME')
+
+            pool_shape = pool.get_shape().as_list()
+            reshape = tf.reshape(pool, [pool_shape[0], pool_shape[1] * pool_shape[2] * pool_shape[3]])
+            hidden = tf.nn.relu(tf.matmul(reshape, self.fc1_weight) + self.fc1_bias)
+
+            logits = tf.matmul(hidden, self.fc2_weight) + self.fc2_bias
+
+            sft = tf.nn.softmax(logits)
+
+            am = tf.argmax(sft , 1)
+            # reduction_indices=[1]
+            eval = tf.reduce_max(sft)
+            # tf.cond(x )
+
+            A = A.write(i, sft)
+
+        d = A.pack()
+
+        init = tf.global_variables_initializer()
+        sess = tf.InteractiveSession()
+        sess.run(init)
+        saver = tf.train.Saver()
+        saver.restore(sess, os.path.join(self.train_checkpoint, 'save.ckpt'))
+
+
+        result = sess.run([d], feed_dict={input:data})
+
+        # print ( result )
+
+        sess.close()
+
+        return ( np.squeeze(result, axis=2) , positions , base_size)
 
     def parseImage (self, image) :
 
@@ -211,72 +411,57 @@ class MnistCnn :
     def pulv (self, image , cell , batch_size):
         pass
 
-    def findInPicture (self, image) :
-
-        image , cell , batch_size = self.parseImage(image)
-
-        imageArray = self.pulv ( image , cell , batch_size )
-
-        input = tf.placeholder(dtype=tf.float32 , shape=(batch_size , cell , cell, 1) , name='input_data')
-
-        eval_prediction = self.model(input)
-
-        sess = tf.InteractiveSession()
-        init = tf.global_variables_initializer()
-        sess.run(init)
-        saver = tf.train.Saver()
-        saver.restore(sess, self.train_checkpoint)
-
-        result = tf.argmax(eval_prediction, 1)
-
-        print ( eval_prediction.eval({input: imageArray }) )
-
-        resultValue = result.eval({input: imageArray })[0]
-
-        # self.showImage(data)
-
-        sess.close()
-
 
 if __name__ == '__main__' :
 
     test_data_filename = cmm.maybe_download('t10k-images-idx3-ubyte.gz')
     test_labels_filename = cmm.maybe_download('t10k-labels-idx1-ubyte.gz')
 
-    test_data = cmm.extract_data(test_data_filename, 1)
-    test_labels = cmm.extract_labels(test_labels_filename, 1)
+    test_data = cmm.extract_data(test_data_filename, 100)
+    test_labels = cmm.extract_labels(test_labels_filename, 100)
 
     mnistCnn = MnistCnn()
 
+    test_data1 = cmm.pack(test_data[0:10])
 
-    # test_data = cmm.pack(test_data)
-    #
-    # origin = cmm.getCanvas(1480 , 640)
-    #
-    # print (np.shape(origin))
-    #
-    # origin = cmm.imageCopy(origin , test_data)
-    #
-    # mnistCnn.findInPicture(origin)
+    test_data2 = cmm.pack(test_data[10:20])
 
+    test_data3 = cmm.pack(test_data[20:35], 2.)
 
+    #origin = cmm.getCanvas(480 , 640)
+    origin = cmm.getCanvas(512, 850)
+
+    origin = cmm.imageCopy(origin, test_data1)
+
+    origin = cmm.imageCopy(origin, test_data2, (20, 40))
+
+    origin = cmm.imageCopy(origin, test_data3, (420, 0))
 
     # plt.imshow(np.squeeze(origin, axis=2))
     # plt.show()
 
-#    mnistCnn = MnistCnn()
-
-    #print ( '------------------------------------------------------------------' )
-
-    # print (np.shape(test_data))
+    # beginTime = time.time()
     #
-    # test_data = np.zeros_like(test_data)
+    # data = ( logits , pos , grid_size ) = mnistCnn.find(origin)
     #
-    # print(np.shape(test_data))
+    # endTime = time.time() - beginTime
+    #
+    # print ( endTime )
 
-    # mnistCnn.showImage(test_data)
+    # print (logits)
 
-    resultValue = mnistCnn.execute(test_data)
-    print ( resultValue )
+    # for i , row in enumerate(logits):
+    #     list = []
+    #     for each in row :
+    #         list.append('%.4f' % each)
+    #     print ( list )
+
+    data = (values , offsets , rect_size) = mnistCnn.find(origin)
+
+    cmm.showImageGrid(origin , data , format='%.2f', rate=0.35)
+
+
+    #mnistCnn.test(origin)
+
 
     # mnistCnn.train()

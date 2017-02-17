@@ -3,7 +3,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from utils import mnist_common as cmm
-import matplotlib.gridspec as gridspec
 
 class MnistCnn () :
     train_checkpoint = '/home/mhkim/data/checkpoint/mnist_cnn/save.ckpt'
@@ -105,38 +104,6 @@ class MnistCnn () :
 
         return "not yet"
 
-
-    def gridView(self, images) :
-
-        for i in range(len(images)) :
-            imageData = images[i]
-
-            r, c, channel = np.shape(imageData)
-
-            rc = int(np.round(np.sqrt(channel)))
-
-            cc = int(channel / rc)
-
-            if channel // rc > 1 : cc += 1
-
-            index = 0
-
-            fig = plt.figure('figure %d' % (i + 1))
-
-            gs = gridspec.GridSpec(rc, cc, wspace=0.0)
-
-            ax = [plt.subplot(gs[i]) for i in (range(channel))]
-
-            gs.update(hspace=0)
-
-            for i in range(channel):
-                _list = imageData[:, :, index:index + 1:]
-                _list = np.squeeze(_list, axis=2)
-                ax[index].imshow(_list)
-                index += 1
-
-        plt.show()
-
     def execute (self, data) :
 
         sess = tf.InteractiveSession()
@@ -178,7 +145,7 @@ class MnistCnn () :
 
         pool2W = self.pool2.eval({self.eval_data: [imgRst]})[0]
 
-        self.gridView([conv1W,conv2W])
+        cmm.gridView([conv1W,conv2W])
 
         #self.gridView(conv2W)
 
