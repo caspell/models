@@ -198,19 +198,19 @@ class MnistCnn :
         return resultValue
 
 if __name__ == '__main__' :
-
-    test_data_filename = cmm.maybe_download('t10k-images-idx3-ubyte.gz')
-    test_labels_filename = cmm.maybe_download('t10k-labels-idx1-ubyte.gz')
-
-    test_data = cmm.extract_data(test_data_filename, 1)
-    test_labels = cmm.extract_labels(test_labels_filename, 1)
+    #
+    # test_data_filename = cmm.maybe_download('t10k-images-idx3-ubyte.gz')
+    # test_labels_filename = cmm.maybe_download('t10k-labels-idx1-ubyte.gz')
+    #
+    # test_data = cmm.extract_data(test_data_filename, 1)
+    # test_labels = cmm.extract_labels(test_labels_filename, 1)
 
     mnistCnn = MnistCnn()
 
     print ( '------------------------------------------------------------------' )
 
-    resultValue = mnistCnn.execute(test_data)
+    # resultValue = mnistCnn.execute(test_data)
 
-    print ( resultValue )
+    # print ( resultValue )
 
-    # mnistCnn.train()
+    mnistCnn.train()
