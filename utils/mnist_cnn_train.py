@@ -16,7 +16,7 @@ class MnistCnn :
 
     IMAGE_SIZE = 28
     NUM_CHANNELS = 1
-    NUM_LABELS = 10 + 1
+    NUM_LABELS = 10
     SEED = 66478
     PIXEL_DEPTH = 255
     VALIDATION_SIZE = 5000
@@ -158,32 +158,6 @@ class MnistCnn :
 
             print("finished!")
 
-    def showImage(self, test_data=None , show=False):
-        imageBuff = []
-
-        print(np.shape(test_data))
-
-        # test_data = np.squeeze(test_data)
-
-        for img in test_data :
-            img = np.squeeze(img)
-            for i in range(28):
-                _row = []
-                for j in range(28):
-                    _cell = img[i][j]
-                    if _cell < 0:
-                        _cell = 0
-                    else:
-                        _cell = 1
-                    _row.append(_cell)
-                imageBuff.append(_row)
-                print(_row)
-            print('--------------------------------------------------------')
-
-        if show :
-            plt.imshow(imageBuff)
-            plt.show()
-
     def execute (self, data) :
 
         diff = 4 - np.ndim(data)
@@ -301,7 +275,166 @@ class MnistCnn :
         plt.imshow(np.squeeze(result[0], 2))
         plt.show()
 
-    def find (self, data) :
+    def find3 (self, data) :
+
+        CHAR_WIDTH = 28
+
+        print ( np.shape(data) )
+
+        h , w , c = np.shape(data)
+
+        rate = 2
+
+        base_size = CHAR_WIDTH * rate
+        _y = math.ceil(h / CHAR_WIDTH / rate)
+        _x = math.ceil(w / CHAR_WIDTH / rate)
+
+        h , w =  _y * base_size , _x * base_size
+
+        canvas = cmm.getCanvas(h , w)
+
+        data = cmm.imageCopy(canvas, data)
+
+        size = _y * _x
+
+        input = tf.placeholder(dtype=tf.float32, shape=(size , base_size , base_size , c), name='input1')
+
+        images = []
+
+        positions = []
+
+        for i in range(size):
+
+            offset = ((i // _x) * base_size, (i % _x) * base_size)
+
+            positions.append(offset)
+
+            item = data[offset[0]:offset[0]+base_size , offset[1] : offset[1]+base_size, :]
+
+            images.append(item)
+
+        images = np.asarray(images)
+
+        def conv2 () :
+            conv = tf.nn.conv2d(input , self.W1, strides=[1, 1, 1, 1], padding='SAME')
+            relu = tf.nn.relu(tf.nn.bias_add(conv, self.b1))
+            pool = tf.nn.max_pool(relu, ksize=[1, 2 * rate , 2 * rate , 1], strides=[1, 2 * rate, 2 * rate, 1], padding='SAME')
+
+            conv = tf.nn.conv2d(pool, self.W2, strides=[1, 1, 1, 1], padding='SAME')
+            relu = tf.nn.relu(tf.nn.bias_add(conv, self.b2))
+            pool = tf.nn.max_pool(relu, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME')
+
+            return pool
+
+        pool = conv2()
+
+        pool_shape = pool.get_shape().as_list()
+        reshape = tf.reshape(pool, [pool_shape[0], pool_shape[1] * pool_shape[2] * pool_shape[3]])
+        hidden = tf.nn.relu(tf.matmul(reshape, self.fc1_weight) + self.fc1_bias)
+
+        logits = tf.matmul(hidden, self.fc2_weight) + self.fc2_bias
+
+        sft = tf.nn.softmax(logits)
+
+        am = tf.argmax(sft , 1)
+        # reduction_indices=[1]
+
+        #eval = tf.reduce_max(sft)
+
+        eval = sft
+
+        init = tf.global_variables_initializer()
+        sess = tf.InteractiveSession()
+        sess.run(init)
+        saver = tf.train.Saver()
+        saver.restore(sess, os.path.join(self.train_checkpoint, 'save.ckpt'))
+
+        result = sess.run([eval], feed_dict={input: images})
+
+        print ( np.shape(result[0]))
+
+        sess.close()
+
+        return ( np.squeeze(result, axis=2) , positions , base_size)
+
+    def find2 (self, data) :
+
+        CHAR_WIDTH = 28
+
+        print ( np.shape(data) )
+
+        h , w , c = np.shape(data)
+
+        rate = 2
+
+        base_size = CHAR_WIDTH * rate
+        _y = math.ceil(h / CHAR_WIDTH / rate)
+        _x = math.ceil(w / CHAR_WIDTH / rate)
+
+        h , w =  _y * base_size , _x * base_size
+
+        canvas = cmm.getCanvas(h , w)
+
+        data = cmm.imageCopy(canvas, data)
+
+        size = _y * _x
+
+        input = tf.placeholder(dtype=tf.float32, shape=(size , base_size , base_size , c), name='input1')
+
+        images = []
+
+        positions = []
+
+        for i in range(size):
+
+            offset = ((i // _x) * base_size, (i % _x) * base_size)
+
+            positions.append(offset)
+
+            item = data[offset[0]:offset[0]+base_size , offset[1] : offset[1]+base_size, :]
+
+            images.append(item)
+
+        images = np.asarray(images)
+
+        conv = tf.nn.conv2d(input , self.W1, strides=[1, 1, 1, 1], padding='SAME')
+        relu = tf.nn.relu(tf.nn.bias_add(conv, self.b1))
+        pool = tf.nn.max_pool(relu, ksize=[1, 2 * rate , 2 * rate , 1], strides=[1, 2 * rate, 2 * rate, 1], padding='SAME')
+
+        conv = tf.nn.conv2d(pool, self.W2, strides=[1, 1, 1, 1], padding='SAME')
+        relu = tf.nn.relu(tf.nn.bias_add(conv, self.b2))
+        pool = tf.nn.max_pool(relu, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME')
+
+        pool_shape = pool.get_shape().as_list()
+        reshape = tf.reshape(pool, [pool_shape[0], pool_shape[1] * pool_shape[2] * pool_shape[3]])
+        hidden = tf.nn.relu(tf.matmul(reshape, self.fc1_weight) + self.fc1_bias)
+
+        logits = tf.matmul(hidden, self.fc2_weight) + self.fc2_bias
+
+        sft = tf.nn.softmax(logits)
+
+        am = tf.argmax(sft , 1)
+        # reduction_indices=[1]
+
+        #eval = tf.reduce_max(sft)
+
+        eval = sft
+
+        init = tf.global_variables_initializer()
+        sess = tf.InteractiveSession()
+        sess.run(init)
+        saver = tf.train.Saver()
+        saver.restore(sess, os.path.join(self.train_checkpoint, 'save.ckpt'))
+
+        result = sess.run([eval], feed_dict={input: images})
+
+        print ( np.shape(result[0]))
+
+        sess.close()
+
+        return ( np.squeeze(result, axis=2) , positions , base_size)
+
+    def find1 (self, data) :
 
         CHAR_WIDTH = 28
 
@@ -351,8 +484,6 @@ class MnistCnn :
 
             conv = tf.nn.conv2d(pool, self.W2, strides=[1, 1, 1, 1], padding='SAME')
             relu = tf.nn.relu(tf.nn.bias_add(conv, self.b2))
-            pool = tf.nn.max_pool(relu, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME')
-
             pool = tf.nn.max_pool(relu, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME')
 
             pool_shape = pool.get_shape().as_list()
@@ -411,8 +542,7 @@ class MnistCnn :
     def pulv (self, image , cell , batch_size):
         pass
 
-
-if __name__ == '__main__' :
+def main1() :
 
     test_data_filename = cmm.maybe_download('t10k-images-idx3-ubyte.gz')
     test_labels_filename = cmm.maybe_download('t10k-labels-idx1-ubyte.gz')
@@ -422,46 +552,121 @@ if __name__ == '__main__' :
 
     mnistCnn = MnistCnn()
 
-    test_data1 = cmm.pack(test_data[0:10])
+    test_data1 = cmm.pack2(test_data[0:10])
 
-    test_data2 = cmm.pack(test_data[10:20])
+    test_data2 = cmm.pack2(test_data[10:20])
 
-    test_data3 = cmm.pack(test_data[20:35], 2.)
+    test_data3 = cmm.pack2(test_data[20:35], 2.)
 
     #origin = cmm.getCanvas(480 , 640)
-    origin = cmm.getCanvas(512, 850)
 
-    origin = cmm.imageCopy(origin, test_data1)
+    image = "/home/mhkim/사진/dream_d9e49f73ad.jpg"
 
-    origin = cmm.imageCopy(origin, test_data2, (20, 40))
+    origin = cmm.getCanvas2(512, 850)
+    #origin = cmm.getCanvas2(512, 850 , image=image)
+    # print ( np.shape(origin) )
 
-    origin = cmm.imageCopy(origin, test_data3, (420, 0))
+    origin = cmm.imageCopy2(origin, test_data1)
 
-    # plt.imshow(np.squeeze(origin, axis=2))
+    origin = cmm.imageCopy2(origin, test_data2, (20, 40))
+
+    origin = cmm.imageCopy2(origin, test_data3, (420, 0))
+
+    plt.imshow(origin)
+    plt.show()
+
+    origin = cmm.parse_image(origin)
+
+    data = (values , offsets , rect_size) = mnistCnn.find1(origin)
+    cmm.showImageGrid(origin , data , format='%.2f', rate=0.55, color='white')
+
+def main2() :
+
+    test_data_filename = cmm.maybe_download('t10k-images-idx3-ubyte.gz')
+    test_labels_filename = cmm.maybe_download('t10k-labels-idx1-ubyte.gz')
+
+    test_data = cmm.extract_data(test_data_filename, 100)
+    test_labels = cmm.extract_labels(test_labels_filename, 100)
+
+    # cmm.showImage2(test_data)
+
+    mnistCnn = MnistCnn()
+    #
+
+    test_data1 = cmm.pack2(test_data[0:10], spacing=1.)
+
+    test_data2 = cmm.pack2(test_data[20:30], spacing=1.)
+
+    test_data3 = cmm.pack2(test_data[30:40], spacing=1. , power=2.)
+
+    image = "/home/mhkim/사진/dream_d9e49f73ad.jpg"
+
+    #origin = cmm.getCanvas2(28 * 10, 28 * 20, image=image)
+
+    origin = cmm.getCanvas2(28 * 10, 28 * 20, image=image)
+
+    origin = cmm.imageCopy2(origin, test_data1, (0, 0))
+
+    origin = cmm.imageCopy2(origin, test_data2, (28 * 3, 0))
+
+    origin = cmm.imageCopy2(origin, test_data3, (28 * 6, 0))
+
+    origin = cmm.parse_image(origin)
+
+    print(np.shape(origin))
+
+    origin = origin / [-255 * 2]
+    #
+    # plt.imshow(np.squeeze(origin))
     # plt.show()
 
-    # beginTime = time.time()
+    data = (values, offsets, rect_size) = mnistCnn.find2(origin)
+
+    cmm.showImageGrid(origin, data, format='%.2f', rate='each', color='white')
+
+def main3():
+
+    test_data_filename = cmm.maybe_download('t10k-images-idx3-ubyte.gz')
+    test_labels_filename = cmm.maybe_download('t10k-labels-idx1-ubyte.gz')
+
+    test_data = cmm.extract_data(test_data_filename, 100)
+    test_labels = cmm.extract_labels(test_labels_filename, 100)
+
+    # cmm.showImage2(test_data)
+
+    mnistCnn = MnistCnn()
     #
-    # data = ( logits , pos , grid_size ) = mnistCnn.find(origin)
+
+    test_data1 = cmm.pack2(test_data[0:10], spacing=1.)
+
+    test_data2 = cmm.pack2(test_data[20:30], spacing=1.)
+
+    test_data3 = cmm.pack2(test_data[30:40], spacing=1. , power=2.)
+
+    image = "/home/mhkim/사진/dream_d9e49f73ad.jpg"
+
+    #origin = cmm.getCanvas2(28 * 10, 28 * 20, image=image)
+
+    origin = cmm.getCanvas2(28 * 10, 28 * 20, image=image)
+
+    origin = cmm.imageCopy2(origin, test_data1, (0, 0))
+
+    origin = cmm.imageCopy2(origin, test_data2, (28 * 3, 0))
+
+    origin = cmm.imageCopy2(origin, test_data3, (28 * 6, 0))
+
+    origin = cmm.parse_image(origin)
+
+    print(np.shape(origin))
+
+    origin = origin / [-255 * 2]
     #
-    # endTime = time.time() - beginTime
-    #
-    # print ( endTime )
+    # plt.imshow(np.squeeze(origin))
+    # plt.show()
 
-    # print (logits)
+    data = (values, offsets, rect_size) = mnistCnn.find3(origin)
 
-    # for i , row in enumerate(logits):
-    #     list = []
-    #     for each in row :
-    #         list.append('%.4f' % each)
-    #     print ( list )
+    cmm.showImageGrid(origin, data, format='%.2f', rate='each', color='white')
 
-    data = (values , offsets , rect_size) = mnistCnn.find(origin)
-
-    cmm.showImageGrid(origin , data , format='%.2f', rate=0.35)
-
-
-    #mnistCnn.test(origin)
-
-
-    # mnistCnn.train()
+if __name__ == '__main__' :
+    main3()

@@ -11,8 +11,8 @@ import argparse
 import gzip
 
 from six.moves import urllib
-
-from utils import mnist_common as cmm
+#
+# from utils import mnist_common as cmm
 
 from tensorflow.examples.tutorials.mnist import input_data
 
@@ -31,19 +31,48 @@ BATCH_SIZE = 64
 NUM_EPOCHS = 10
 EVAL_FREQUENCY = 100  # Number of steps between evaluations.
 
+
+def maybe_download(filename):
+    if not tf.gfile.Exists(WORK_DIRECTORY):
+        tf.gfile.MakeDirs(WORK_DIRECTORY)
+    filepath = os.path.join(WORK_DIRECTORY, filename)
+    if not tf.gfile.Exists(filepath):
+        filepath, _ = urllib.request.urlretrieve(SOURCE_URL + filename, filepath)
+        with tf.gfile.GFile(filepath) as f:
+            size = f.size()
+        print('Successfully downloaded', filename, size, 'bytes.')
+    return filepath
+
+
+def extract_data(filename, num_images):
+    with gzip.open(filename) as bytestream:
+        bytestream.read(16)
+        buf = bytestream.read(IMAGE_SIZE * IMAGE_SIZE * num_images * NUM_CHANNELS)
+        data = np.frombuffer(buf, dtype=np.uint8).astype(np.float32)
+        data = (data - (PIXEL_DEPTH / 2.0)) / PIXEL_DEPTH
+        data = data.reshape(num_images, IMAGE_SIZE, IMAGE_SIZE, NUM_CHANNELS)
+        return data
+
+def extract_labels(filename, num_images):
+    with gzip.open(filename) as bytestream:
+        bytestream.read(8)
+        buf = bytestream.read(1 * num_images)
+        labels = np.frombuffer(buf, dtype=np.uint8).astype(np.int64)
+    return labels
+
 def main () :
 
-    train_data_filename = cmm.maybe_download('train-images-idx3-ubyte.gz')
-    train_labels_filename = cmm.maybe_download('train-labels-idx1-ubyte.gz')
-    test_data_filename = cmm.maybe_download('t10k-images-idx3-ubyte.gz')
-    test_labels_filename = cmm.maybe_download('t10k-labels-idx1-ubyte.gz')
+    train_data_filename = maybe_download('train-images-idx3-ubyte.gz')
+    train_labels_filename = maybe_download('train-labels-idx1-ubyte.gz')
+    test_data_filename = maybe_download('t10k-images-idx3-ubyte.gz')
+    test_labels_filename = maybe_download('t10k-labels-idx1-ubyte.gz')
 
     # Extract it into numpy arrays.
-    train_data = cmm.extract_data(train_data_filename, 60000)
-    train_labels = cmm.extract_labels(train_labels_filename, 60000)
+    train_data = extract_data(train_data_filename, 60000)
+    train_labels = extract_labels(train_labels_filename, 60000)
 
-    test_data = cmm.extract_data(test_data_filename, 10000)
-    test_labels = cmm.extract_labels(test_labels_filename, 10000)
+    test_data = extract_data(test_data_filename, 10000)
+    test_labels = extract_labels(test_labels_filename, 10000)
 
     # Generate a validation set.
     validation_data = train_data[:VALIDATION_SIZE, ...]
