@@ -250,31 +250,6 @@ class MnistCnn :
 
         return resultValue
 
-    def test (self, data):
-
-        h , w , c = np.shape(data)
-
-        input = tf.placeholder(dtype=tf.float32, shape=(1, h , w , c), name='input1')
-
-        pool = tf.nn.max_pool(input, ksize=[1, 2, 4, 1], strides=[1, 2, 4, 1], padding='SAME')
-        #pool = tf.nn.max_pool(pool, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME')
-        # pool = tf.nn.max_pool(pool, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME')
-
-        init = tf.global_variables_initializer()
-        sess = tf.InteractiveSession()
-        sess.run(init)
-
-        result = pool.eval({input:[data]})
-
-        # print ( result )
-
-        sess.close();
-
-        print (np.shape(result[0]))
-
-        plt.imshow(np.squeeze(result[0], 2))
-        plt.show()
-
     def find3 (self, data) :
 
         CHAR_WIDTH = 28
@@ -283,7 +258,7 @@ class MnistCnn :
 
         h , w , c = np.shape(data)
 
-        rate = 2
+        rate = 1
 
         base_size = CHAR_WIDTH * rate
         _y = math.ceil(h / CHAR_WIDTH / rate)
@@ -542,6 +517,47 @@ class MnistCnn :
     def pulv (self, image , cell , batch_size):
         pass
 
+    def showConv ( self, image ) :
+
+        s, h, w, c = np.shape(image)
+
+        input = tf.placeholder(dtype=tf.float32, shape=(s , h, w, c))
+
+        ww = tf.Variable(tf.truncated_normal([5, 5, c, 32], stddev=0.1, seed=self.SEED, dtype=tf.float32))
+
+        ww2 = tf.Variable(tf.truncated_normal([5, 5, 32, 64], stddev=0.1, seed=self.SEED, dtype=tf.float32))
+
+        bb1 = tf.Variable(tf.zeros([32], dtype=tf.float32))
+        bb2 = tf.Variable(tf.constant(0.1, shape=[64], dtype=tf.float32))
+
+        conv = tf.nn.conv2d(input, ww, strides=[1, 1, 1, 1], padding='SAME')
+        relu = tf.nn.relu(tf.nn.bias_add(conv, bb1))
+        pool = tf.nn.max_pool(relu, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME')
+
+        conv = tf.nn.conv2d(pool, ww2, strides=[1, 1, 1, 1], padding='SAME')
+        relu = tf.nn.relu(tf.nn.bias_add(conv, bb2))
+        pool = tf.nn.max_pool(relu, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME')
+
+        init = tf.global_variables_initializer()
+        sess = tf.InteractiveSession()
+        sess.run(init)
+
+        # saver = tf.train.Saver()
+        # saver.restore(sess, os.path.join(self.train_checkpoint, 'save.ckpt'))
+
+        r1, r2, r3 = sess.run([conv, relu, pool], feed_dict={input: image})
+
+        print (np.shape(r1))
+        cmm.gridView(r1)
+
+        print(np.shape(r2))
+        cmm.gridView(r2)
+
+        print(np.shape(r3))
+        cmm.gridView(r3)
+
+        sess.close()
+
 def main1() :
 
     test_data_filename = cmm.maybe_download('t10k-images-idx3-ubyte.gz')
@@ -632,22 +648,18 @@ def main3():
     test_data = cmm.extract_data(test_data_filename, 100)
     test_labels = cmm.extract_labels(test_labels_filename, 100)
 
-    # cmm.showImage2(test_data)
-
     mnistCnn = MnistCnn()
-    #
+    test_data1 = cmm.pack2(test_data[0:10])
 
-    test_data1 = cmm.pack2(test_data[0:10], spacing=1.)
+    test_data2 = cmm.pack2(test_data[20:30], spacing=0.85)
 
-    test_data2 = cmm.pack2(test_data[20:30], spacing=1.)
+    test_data3 = cmm.pack2(test_data[30:40], spacing=1.5)
 
-    test_data3 = cmm.pack2(test_data[30:40], spacing=1. , power=2.)
+    test_data4 = cmm.pack2(test_data[50:60] , power=2.)
 
     image = "/home/mhkim/사진/dream_d9e49f73ad.jpg"
 
-    #origin = cmm.getCanvas2(28 * 10, 28 * 20, image=image)
-
-    origin = cmm.getCanvas2(28 * 10, 28 * 20, image=image)
+    origin = cmm.getCanvas2(28 * 11, 28 * 20)
 
     origin = cmm.imageCopy2(origin, test_data1, (0, 0))
 
@@ -655,18 +667,101 @@ def main3():
 
     origin = cmm.imageCopy2(origin, test_data3, (28 * 6, 0))
 
+    origin = cmm.imageCopy2(origin, test_data4, (28 * 9, 0))
+
     origin = cmm.parse_image(origin)
 
     print(np.shape(origin))
 
     origin = origin / [-255 * 2]
-    #
-    # plt.imshow(np.squeeze(origin))
-    # plt.show()
 
     data = (values, offsets, rect_size) = mnistCnn.find3(origin)
 
     cmm.showImageGrid(origin, data, format='%.2f', rate='each', color='white')
 
+def main4():
+
+    test_data_filename = cmm.maybe_download('t10k-images-idx3-ubyte.gz')
+    test_labels_filename = cmm.maybe_download('t10k-labels-idx1-ubyte.gz')
+
+    test_data = cmm.extract_data(test_data_filename, 100)
+    test_labels = cmm.extract_labels(test_labels_filename, 100)
+
+    mnistCnn = MnistCnn()
+    test_data1 = cmm.pack2(test_data[0:10])
+
+    test_data2 = cmm.pack2(test_data[20:30], spacing=0.85)
+
+    test_data3 = cmm.pack2(test_data[30:40], spacing=1.5)
+
+    test_data4 = cmm.pack2(test_data[50:60] , power=2.)
+
+    image = "/home/mhkim/사진/dream_d9e49f73ad.jpg"
+
+    origin = cmm.getCanvas2(28 * 11, 28 * 20)
+
+    origin = cmm.imageCopy2(origin, test_data1, (0, 0))
+
+    origin = cmm.imageCopy2(origin, test_data2, (28 * 3, 0))
+
+    origin = cmm.imageCopy2(origin, test_data3, (28 * 6, 0))
+
+    origin = cmm.imageCopy2(origin, test_data4, (28 * 9, 0))
+
+    origin = cmm.parse_image(origin)
+
+    print(np.shape(origin))
+
+    origin = origin / [-255 * 2]
+
+    data = (values, offsets, rect_size) = mnistCnn.find3(origin)
+
+    cmm.showImageGrid(origin, data, format='%.2f', rate='each', color='white')
+
+def main5():
+
+    test_data_filename = cmm.maybe_download('t10k-images-idx3-ubyte.gz')
+    test_labels_filename = cmm.maybe_download('t10k-labels-idx1-ubyte.gz')
+
+    test_data = cmm.extract_data(test_data_filename, 100)
+    test_labels = cmm.extract_labels(test_labels_filename, 100)
+
+    mnistCnn = MnistCnn()
+
+    test_data1 = cmm.pack2(test_data[0:10], spacing=2.)
+
+    image = "/home/mhkim/사진/dream_d9e49f73ad.jpg"
+
+    origin = cmm.getCanvas2(28 * 2, 28 * 20 )
+
+    origin = cmm.imageCopy2(origin, test_data1, (0, 0))
+
+    origin = cmm.parse_image(origin)
+
+    origin = origin / [-255 * 2]
+
+    data = (values, offsets, rect_size) = mnistCnn.find3(origin)
+
+    cmm.showImageGrid(origin, data, format='%.2f', rate='each', color='white')
+
+def main6() :
+
+    test_data_filename = cmm.maybe_download('t10k-images-idx3-ubyte.gz')
+    test_labels_filename = cmm.maybe_download('t10k-labels-idx1-ubyte.gz')
+
+    test_data = cmm.extract_data(test_data_filename, 100)
+    test_labels = cmm.extract_labels(test_labels_filename, 100)
+
+    mnistCnn = MnistCnn()
+
+    test_data = cmm.pack2(test_data[0:5], spacing=0.85)
+    plt.imshow(test_data)
+    plt.show()
+    # test_data = cmm.parse_image(test_data)
+
+    # test_data = test_data / [-255 * 2]
+
+    mnistCnn.showConv([test_data])
+
 if __name__ == '__main__' :
-    main3()
+    main6()

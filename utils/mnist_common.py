@@ -104,6 +104,8 @@ def get_image( imagePath ) :
 
 
 def masking ( img ) :
+    if type(img) is np.ndarray :
+        img = Image.fromarray(img)
     mask = img.convert("L")
     return mask.point(lambda i : i < 100 and 255)
 

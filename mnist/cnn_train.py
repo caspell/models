@@ -16,7 +16,7 @@ from six.moves import urllib
 
 from tensorflow.examples.tutorials.mnist import input_data
 
-train_checkpoint = '/home/mhkim/data/checkpoint/mnist_cnn/'
+train_checkpoint = '/home/mhkim/data/checkpoint/mnist_cnn2/'
 
 SOURCE_URL = 'http://yann.lecun.com/exdb/mnist/'
 WORK_DIRECTORY = '/home/mhkim/data/mnist'
@@ -59,6 +59,9 @@ def extract_labels(filename, num_images):
         buf = bytestream.read(1 * num_images)
         labels = np.frombuffer(buf, dtype=np.uint8).astype(np.int64)
     return labels
+
+def transformed(train_data) :
+    pass
 
 def main () :
 
@@ -130,7 +133,10 @@ def main () :
 
     start_time = time.time()
 
-    with tf.Session() as sess :
+    config = tf.ConfigProto()
+    config.gpu_options.allow_growth = True
+
+    with tf.Session(config=config) as sess :
         tf.global_variables_initializer().run()
 
         saver = tf.train.Saver()
@@ -180,7 +186,10 @@ if __name__ == '__main__' :
         tf.gfile.DeleteRecursively(train_checkpoint)
     tf.gfile.MakeDirs(train_checkpoint)
 
-    main()
+    # main()
+
+    transformed()
+
     '''
     parser = argparse.ArgumentParser()
     parser.add_argument(
