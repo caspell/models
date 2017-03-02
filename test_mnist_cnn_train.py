@@ -18,7 +18,7 @@ class MnistCnn :
     VALIDATION_SIZE = 5000
     SEED = 66478
     BATCH_SIZE = 640
-    NUM_EPOCHS = 10
+    NUM_EPOCHS = 100
     EVAL_FREQUENCY = 100  # Number of steps between evaluations.
 
     def __init__(self) :
