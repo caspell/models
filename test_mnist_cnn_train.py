@@ -116,7 +116,9 @@ class MnistCnn :
 
             saver = tf.train.Saver()
 
-            for step in range(int(self.NUM_EPOCHS * train_size) // self.BATCH_SIZE):
+            _range = int(self.NUM_EPOCHS * train_size) // self.BATCH_SIZE
+
+            for step in range(_range):
                 offset = (step * self.BATCH_SIZE) % (train_size - self.BATCH_SIZE)
                 batch_data = train_data[offset: (offset + self.BATCH_SIZE)]
                 batch_labels = train_labels[offset:(offset + self.BATCH_SIZE)]
