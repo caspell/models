@@ -149,10 +149,13 @@ def train():
     print("------------------------------------------------------------------")
     print( cifar10.NUM_EXAMPLES_PER_EPOCH_FOR_TRAIN , FLAGS.batch_size)
     print ( num_batches_per_epoch )
-    num_batches_per_epoch = 500000
+    # num_batches_per_epoch = 500000
     print("------------------------------------------------------------------")
 
     decay_steps = int(num_batches_per_epoch * cifar10.NUM_EPOCHS_PER_DECAY)
+
+    print ( decay_steps)
+    print("------------------------------------------------------------------")
 
     # Decay the learning rate exponentially based on the number of steps.
     lr = tf.train.exponential_decay(cifar10.INITIAL_LEARNING_RATE,
