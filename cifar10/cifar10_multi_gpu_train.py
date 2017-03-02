@@ -133,7 +133,9 @@ def average_gradients(tower_grads):
 
 
 def train():
-  FLAGS.batch_size = 32
+  FLAGS.batch_size = 16
+  cifar10.NUM_EXAMPLES_PER_EPOCH_FOR_TRAIN = 5000000
+
   #batchsize = FLAGS.batch_size
   """Train CIFAR-10 for a number of steps."""
   with tf.Graph().as_default(), tf.device('/cpu:0'):
