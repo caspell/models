@@ -133,7 +133,7 @@ def average_gradients(tower_grads):
 
 
 def train():
-  FLAGS.batch_size = 128 * 1000
+  FLAGS.batch_size = 128 * 100 * 2
   # cifar10.NUM_EXAMPLES_PER_EPOCH_FOR_TRAIN = 50000
 
   #batchsize = FLAGS.batch_size
