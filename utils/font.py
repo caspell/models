@@ -97,6 +97,8 @@ def main() :
 
     # print(result)
 
+
+
     for r in result[0] :
         print ( np.shape(r) )
         # print ( r )

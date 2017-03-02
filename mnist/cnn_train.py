@@ -186,9 +186,9 @@ if __name__ == '__main__' :
         tf.gfile.DeleteRecursively(train_checkpoint)
     tf.gfile.MakeDirs(train_checkpoint)
 
-    # main()
+    main()
 
-    transformed()
+    # transformed()
 
     '''
     parser = argparse.ArgumentParser()

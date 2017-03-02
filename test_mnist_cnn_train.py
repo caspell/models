@@ -17,7 +17,7 @@ class MnistCnn :
     PIXEL_DEPTH = 255
     VALIDATION_SIZE = 5000
     SEED = 66478
-    BATCH_SIZE = 64
+    BATCH_SIZE = 640
     NUM_EPOCHS = 10
     EVAL_FREQUENCY = 100  # Number of steps between evaluations.
 

@@ -466,3 +466,33 @@ def showImage2(test_data=None , show=False):
     if show :
         plt.imshow(imageBuff)
         plt.show()
+
+
+def showMultiImage(test_data):
+    size = len(test_data)
+    for i in range(size) :
+        img = test_data[i]
+        print ( np.shape(img) )
+        if np.ndim(img) > 2 :
+            img = np.squeeze(img, axis=2)
+        plt.subplot(size , 1 , i +1)
+        plt.imshow(img)
+    plt.show()
+
+
+
+def array_write (filename, data) :
+    # if os.path.isfile(filename) :
+    #     os.remove(filename)
+    with open(filename, 'wb') as f:
+        data = (data + (255 * 2.0))
+        data = data.astype(np.uint8)
+        f.write(data)
+
+def array_read(filename, count, image_size=28, channel=1) :
+    with open(filename,'rb') as f:
+        buf = f.read(image_size * image_size * count * image_size)
+        data = np.frombuffer(buf, dtype=np.uint8).astype(np.float32)
+        data = (data - (255 / 2.0)) / 255
+        data = data.reshape(count, image_size , image_size, channel)
+    return data
