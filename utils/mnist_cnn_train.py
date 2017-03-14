@@ -558,6 +558,73 @@ class MnistCnn :
 
         sess.close()
 
+    def showConv2 ( self, image ) :
+
+        s, h, w, c = np.shape(image)
+
+        input = tf.placeholder(dtype=tf.float32, shape=(s , h, w, c))
+
+        ww1 = tf.Variable(tf.truncated_normal([5, 5, c, 16], stddev=0.1, seed=self.SEED, dtype=tf.float32))
+        bb1 = tf.Variable(tf.zeros([16], dtype=tf.float32))
+
+        w2 = tf.Variable(tf.truncated_normal([5, 5, 16, 32], stddev=0.1, seed=self.SEED, dtype=tf.float32))
+        b2 = tf.Variable(tf.constant(0.1, shape=[32], dtype=tf.float32))
+
+        w3 = tf.Variable(tf.truncated_normal([5, 5, 32, 32], stddev=0.1, seed=self.SEED, dtype=tf.float32))
+        b3 = tf.Variable(tf.constant(0.1, shape=[32], dtype=tf.float32))
+
+        w4 = tf.Variable(tf.truncated_normal([5, 5, 32, 32], stddev=0.1, seed=self.SEED, dtype=tf.float32))
+        b4 = tf.Variable(tf.constant(0.1, shape=[32], dtype=tf.float32))
+
+        w5 = tf.Variable(tf.truncated_normal([5, 5, 32, 32], stddev=0.1, seed=self.SEED, dtype=tf.float32))
+        b5 = tf.Variable(tf.constant(0.1, shape=[32], dtype=tf.float32))
+
+        ww2 = tf.Variable(tf.truncated_normal([5, 5, 32, 32], stddev=0.1, seed=self.SEED, dtype=tf.float32))
+        bb2 = tf.Variable(tf.constant(0.1, shape=[32], dtype=tf.float32))
+
+        conv1 = tf.nn.conv2d(input, ww1, strides=[1, 1, 1, 1], padding='SAME')
+        relu1 = tf.nn.relu(tf.nn.bias_add(conv1, bb1))
+
+        conv2 = tf.nn.conv2d(relu1, w2, strides=[1, 1, 1, 1], padding='SAME')
+        relu2 = tf.nn.relu(tf.nn.bias_add(conv2, b2))
+
+        conv3 = tf.nn.conv2d(relu2, w3, strides=[1, 1, 1, 1], padding='SAME')
+        relu3 = tf.nn.relu(tf.nn.bias_add(conv3, b3))
+
+        conv4 = tf.nn.conv2d(relu3, w4, strides=[1, 1, 1, 1], padding='SAME')
+        relu4 = tf.nn.relu(tf.nn.bias_add(conv4, b4))
+
+        conv5 = tf.nn.conv2d(relu4, w5, strides=[1, 1, 1, 1], padding='SAME')
+        relu5 = tf.nn.relu(tf.nn.bias_add(conv5, b5))
+
+        pool1 = tf.nn.max_pool(relu5, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME')
+
+        conv = tf.nn.conv2d(pool1, ww2, strides=[1, 1, 1, 1], padding='SAME')
+        relu = tf.nn.relu(tf.nn.bias_add(conv, bb2))
+        pool = tf.nn.max_pool(relu, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME')
+
+        init = tf.global_variables_initializer()
+        sess = tf.InteractiveSession()
+        sess.run(init)
+
+        # saver = tf.train.Saver()
+        # saver.restore(sess, os.path.join(self.train_checkpoint, 'save.ckpt'))
+
+        #r1, r2, r3 = sess.run([conv, relu, pool], feed_dict={input: image})
+
+        r1, r2, r3, r4, r5 = sess.run([relu1, relu2, relu3, conv4, conv5], feed_dict={input: image})
+
+        print (np.shape(r1))
+        cmm.gridView(r1)
+
+        print(np.shape(r2))
+        cmm.gridView(r2)
+
+        print(np.shape(r3))
+        cmm.gridView(r3)
+
+        sess.close()
+
 def main1() :
 
     test_data_filename = cmm.maybe_download('t10k-images-idx3-ubyte.gz')
@@ -763,5 +830,28 @@ def main6() :
 
     mnistCnn.showConv([test_data])
 
+def main7() :
+    test_data_filename = cmm.maybe_download('t10k-images-idx3-ubyte.gz')
+    test_labels_filename = cmm.maybe_download('t10k-labels-idx1-ubyte.gz')
+
+    test_data = cmm.extract_data(test_data_filename, 100)
+    test_labels = cmm.extract_labels(test_labels_filename, 100)
+
+    mnistCnn = MnistCnn()
+
+    test_data1 = cmm.pack2(test_data[0:10], spacing=2.)
+
+    image = "/home/mhkim/사진/dream_d9e49f73ad.jpg"
+
+    origin = cmm.getCanvas2(28 * 2, 28 * 20)
+
+    origin = cmm.imageCopy2(origin, test_data1, (0, 0))
+
+    origin = cmm.parse_image(origin)
+
+    origin = origin / [-255 * 2]
+
+    mnistCnn.showConv2([origin])
+
 if __name__ == '__main__' :
-    main6()
+    main7()

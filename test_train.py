@@ -5,11 +5,8 @@ from utils import mnist_common as cmm
 import time
 import os
 import sys
-import mkl
 
 class MnistCnn :
-
-    train_checkpoint = '/home/mhkim/data/checkpoint/mnist_cnn/save.ckpt'
 
     IMAGE_SIZE = 28
     NUM_CHANNELS = 1
@@ -75,11 +72,6 @@ class MnistCnn :
             return tf.matmul(hidden, self.fc2_weight) + self.fc2_bias
 
     def train (self) :
-
-        if tf.gfile.Exists(self.train_checkpoint):
-            tf.gfile.DeleteRecursively(self.train_checkpoint)
-        tf.gfile.MakeDirs(self.train_checkpoint)
-
 
         train_data = self.train_data[self.VALIDATION_SIZE:, ...]
         train_labels = self.train_labels[self.VALIDATION_SIZE:]
@@ -149,78 +141,10 @@ class MnistCnn :
 
             print('total time : %.2f s' % elapsed_time)
 
-            saver.save(sess=sess, save_path=os.path.join(self.train_checkpoint, 'save.ckpt'))
-
-            sys.stdout.flush()
-
             print("finished!")
 
-    def showImage(self, test_data=None , show=False):
-        imageBuff = []
-        for i in range(28):
-            _row = []
-            for j in range(28):
-                _cell = test_data[0][i][j][0]
-                # if _cell < 0:
-                #     _cell = 0
-                # else:
-                #     _cell = 1
-                _row.append(_cell)
-            imageBuff.append(_row)
-            print(_row)
-
-        if show :
-            plt.imshow(imageBuff)
-            plt.show()
-
-    def execute (self, data) :
-
-        eval_data = tf.placeholder(tf.float32, shape=(1, self.IMAGE_SIZE, self.IMAGE_SIZE, self.NUM_CHANNELS),
-                                   name='eval_data')
-
-        logits = self.model(eval_data, 'model')
-
-        self.eval_prediction = tf.nn.softmax(logits)
-
-        sess = tf.InteractiveSession()
-        init = tf.global_variables_initializer()
-        sess.run(init)
-        saver = tf.train.Saver()
-        saver.restore(sess, self.train_checkpoint)
-
-        result = tf.argmax(self.eval_prediction, 1)
-
-#        print ( self.eval_prediction.eval({eval_data: data}) )
-
-        resultValue = result.eval({eval_data: data})[0]
-
-        #self.showImage(data)
-
-        sess.close()
-
-        return resultValue
-
 if __name__ == '__main__' :
-    #
-    # test_data_filename = cmm.maybe_download('t10k-images-idx3-ubyte.gz')
-    # test_labels_filename = cmm.maybe_download('t10k-labels-idx1-ubyte.gz')
-    #
-    # test_data = cmm.extract_data(test_data_filename, 1)
-    # test_labels = cmm.extract_labels(test_labels_filename, 1)
-
-
-    print("numpy version: %r" % np.__version__)
-    print("numpy mkl version: %r" % np.__mkl_version__)
-    print("mkl-service version: %r" % mkl.__version__)
-    print("MKL version string: %r" % mkl.get_version_string())
-
 
     mnistCnn = MnistCnn()
-
-    print ( '------------------------------------------------------------------' )
-
-    # resultValue = mnistCnn.execute(test_data)
-
-    # print ( resultValue )
 
     mnistCnn.train()

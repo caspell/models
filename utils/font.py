@@ -5,6 +5,8 @@ import matplotlib.pyplot as plt
 import sys , os
 from utils import mnist_cnn_train
 
+SAVE_PATH = '/home/mhkim/data/fonts'
+
 class FontUtil :
     error_font_file = "fonts_error.txt"
     def __init__(self, text="0123456789"):
@@ -15,10 +17,14 @@ class FontUtil :
         if os.path.exists(self.error_font_file):
             os.remove(self.error_font_file)
 
-        with open("fonts.txt", "r") as f :
+        with open(filePath, "r") as f :
             self._fonts = [ line.replace('\n', '') for line in f.readlines() ]
 
     def getFullImages (self) :
+
+        if not self._fonts :
+            print ('muse load font list file !')
+
         list = []
         for font in self._fonts:
             try :
@@ -30,24 +36,38 @@ class FontUtil :
         return list
 
     def getToImage (self, fontPath, strs) :
+
         returnImage = []
         returnChars = []
-        for _char in strs :
 
-            im = Image.new("RGB", (28, 28))
+        font = ImageFont.truetype(fontPath, 35)
 
-            draw = ImageDraw.Draw(im)
+        fontFileName = os.path.basename(fontPath)
 
-            font = ImageFont.truetype(fontPath, 30)
+        print ( 'font create : {}'.format(fontFileName) )
 
-            draw.text((0, -5), _char, font=font)
+        for _x in range(10):
+            for _y in range(10) :
+                for _char in strs :
 
-            im = im.convert('L')
+                    dir = '{}/{}'.format(SAVE_PATH, _char)
+                    if not os.path.exists(dir) :
+                        os.makedirs(dir)
 
-            im = np.array(im.getdata()).reshape(im.size[0], im.size[1], 1)
+                    im = Image.new("RGB", (56, 56))
 
-            returnImage.append(im)
-            returnChars.append(_char)
+                    draw = ImageDraw.Draw(im)
+
+                    draw.text((5 + _x, 5 + _y), _char, font=font)
+
+                    # im = im.convert('RGB')
+
+                    im.save(os.path.join(dir, '{}_{}_{}.jpg'.format(fontFileName, _x, _y)))
+
+                    im = np.array(im.getdata()).reshape(im.size[0], im.size[1], 3)
+
+                    returnImage.append(im)
+                    returnChars.append(_char)
 
         return (returnImage , returnChars)
 
@@ -71,7 +91,7 @@ def test() :
     # plt.imshow(test)
     # plt.show()
 
-    result = fontUtil.getToImage(test, 'abvc')
+    result = fontUtil.getToImage(test, 'abvc가ㅏ쀍')
 
     # print(result)
 
@@ -84,30 +104,26 @@ def test() :
 
 def main() :
 
-    fontUtil = FontUtil()
+    fontUtil = FontUtil('0123456789')
 
-    test = '/home/mhkim/tools/android-studio/plugins/android/lib/layoutlib/data/fonts/DroidSans.ttf'
+    fontUtil.load('fonts_number.txt')
 
-    # test = img.imread(test)
+    fontUtil.getFullImages()
 
-    # plt.imshow(test)
-    # plt.show()
+    fontUtil = FontUtil('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ')
 
-    result = fontUtil.getToImage(test, '0123')
+    fontUtil.load('fonts_alpha.txt')
 
-    # print(result)
+    fontUtil.getFullImages()
 
+    fontUtil = FontUtil('가나다라마바사아자차카타파하')
 
+    fontUtil.load('fonts_korean.txt')
 
-    for r in result[0] :
-        print ( np.shape(r) )
-        # print ( r )
-
-        plt.imshow(np.squeeze(r, axis=2))
-        plt.show()
+    fontUtil.getFullImages()
 
 
-    #--------------
+    #------------------------------------------
     # fontUtil.load('fonts.txt')
     # results = fontUtil.getFullImages()
     #print(result)
@@ -144,5 +160,47 @@ def main() :
     #     plt.imshow(c[0])
     #     plt.show()
 
+def files () :
+    fontFileList = 'fonts.txt'
+
+    filters = (
+        ('number',  '/home/mhkim/data/fontlist/number.txt')
+        , ('alpha' , '/home/mhkim/data/fontlist/alpha.txt')
+        , ('korean' , '/home/mhkim/data/fontlist/korean.txt')
+    )
+
+    target = {}
+    target2 = {}
+
+    get_fn = (lambda mk : 'fonts_{}.txt'.format(mk))
+
+    for k, v in filters :
+        if os.path.exists(get_fn(k)) :
+            os.remove(get_fn(k))
+
+        with open(v, 'r') as f :
+            target[k] = f.readlines()
+
+    for m in target :
+        target2 [m] = {}
+        for val in target[m]:
+            fn = val.strip('\n')
+            fn = os.path.basename(fn)
+            fn = os.path.splitext(fn)[0]
+            target2[m][fn] = True
+
+    with open(fontFileList, 'r') as f :
+        list = f.readlines()
+
+    for fn in list :
+        bname = os.path.basename(fn).strip('\n')
+        for mk in target2 :
+            with open(get_fn(mk), 'a') as f :
+                if bname in target2[mk] :
+                    f.write(fn)
+
+
 if __name__ == '__main__' :
     main()
+    # test()
+    # files()
